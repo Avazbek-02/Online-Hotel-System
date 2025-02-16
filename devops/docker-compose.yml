@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  udevslabs-yalp:
+    image: postgres:latest
+    container_name: udevslabs-yalp
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: yalp
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - udevslabs-yalp
+
+  udevslabs-yalp-redis:
+    image: redis:latest
+    container_name: udevslabs-yalp-redis
+    ports:
+      - "6378:6379"
+    networks:
+      - udevslabs-yalp
+
+  udevslabs-yalp-clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: udevslabs-yalp-clickhouse
+    environment:
+      CLICKHOUSE_DB: yalp
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: "1234"  
+    ports:
+      - "9002:9002"  
+      - "8123:8123" 
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - udevslabs-yalp
+
+  # minio:
+  #   container_name: minio
+  #   image: minio/minio:latest
+  #   ports:
+  #     - '9000:9000'
+  #     - '9001:9001'
+  #   networks:
+  #     - udevslabs-yalp
+  #   volumes:
+  #     - 'minio_data:/data'
+  #   environment:
+  #     - MINIO_ROOT_USER=minioadmin
+  #     - MINIO_ROOT_PASSWORD=minioadmin
+  #     - MINIO_DEFAULT_BUCKETS=user
+  #   command: server /data 
+
+networks:
+  udevslabs-yalp:
+    external: true
+    driver: bridge
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  # minio_data:
+  #   driver: local
