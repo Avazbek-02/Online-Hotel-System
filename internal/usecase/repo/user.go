@@ -79,34 +79,55 @@ func (r *UserRepo) GetSingle(ctx context.Context, req entity.UserSingleRequest) 
 	return response, nil
 }
 
-func (r *UserRepo) GetList(ctx context.Context) ([]entity.User, error) {
-	var response []entity.User
-	query, _, err := r.pg.Builder.
+func (r *UserRepo) GetList(ctx context.Context, req entity.GetListFilter) (entity.UserList, error) {
+	var (
+		response             = entity.UserList{}
+		createdAt, updatedAt time.Time
+	)
+
+	queryBuilder := r.pg.Builder.
 		Select("id, name, email, phone, user_status, gender, role, created_at, updated_at").
-		From("users").ToSql()
+		From("users")
+
+	queryBuilder, where := PrepareGetListQuery(queryBuilder, req)
+
+	query, args, err := queryBuilder.ToSql()
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 
-	rows, err := r.pg.Pool.Query(ctx, query)
+	rows, err := r.pg.Pool.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return response, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var user entity.User
-		var createdAt, updatedAt time.Time
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.UserStatus, &user.Gender, &user.UserRole, &createdAt, &updatedAt); err != nil {
-			return nil, err
+		var item entity.User
+		err = rows.Scan(&item.ID, &item.Name, &item.Email, &item.Phone, &item.UserStatus, &item.Gender, &item.UserRole, &createdAt, &updatedAt)
+		if err != nil {
+			return response, err
 		}
-		user.CreatedAt = createdAt.Format(time.RFC3339)
-		user.UpdatedAt = updatedAt.Format(time.RFC3339)
-		response = append(response, user)
+
+		item.CreatedAt = createdAt.Format(time.RFC3339)
+		item.UpdatedAt = updatedAt.Format(time.RFC3339)
+
+		response.Items = append(response.Items, item)
+	}
+
+	countQuery, args, err := r.pg.Builder.Select("COUNT(1)").From("users").Where(where).ToSql()
+	if err != nil {
+		return response, err
+	}
+
+	err = r.pg.Pool.QueryRow(ctx, countQuery, args...).Scan(&response.Count)
+	if err != nil {
+		return response, err
 	}
 
 	return response, nil
 }
+
 
 func (r *UserRepo) Update(ctx context.Context, req entity.User) (entity.User, error) {
 	updateFields := make(map[string]interface{})
@@ -149,8 +170,8 @@ func (r *UserRepo) Update(ctx context.Context, req entity.User) (entity.User, er
 	return r.GetSingle(ctx, entity.UserSingleRequest{ID: req.ID})
 }
 
-func (r *UserRepo) Delete(ctx context.Context, id string) error {
-	query, args, err := r.pg.Builder.Delete("users").Where("id = ?", id).ToSql()
+func (r *UserRepo) Delete(ctx context.Context, req entity.Id) error {
+	query, args, err := r.pg.Builder.Delete("users").Where("id = ?", req.ID).ToSql()
 	if err != nil {
 		return err
 	}
