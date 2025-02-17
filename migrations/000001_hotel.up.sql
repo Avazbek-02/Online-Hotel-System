@@ -38,11 +38,12 @@ CREATE TYPE if not exists "user_status" AS ENUM (
 );
 
 CREATE TABLE if not exists "users" (
-  "id" UUID PRIMARY KEY,
-  "name" VARCHAR(100),
-  "email" VARCHAR(100) UNIQUE,
-  "password" VARCHAR(255),
-  "phone" VARCHAR(20),
+  "id" UUID PRIMARY KEY not NULL,
+  "fullname" VARCHAR(100) not NULL,
+  "username" VARCHAR(100) not NULL UNIQUE,
+  "email" VARCHAR(100) not NULL UNIQUE,
+  "password" VARCHAR(255) not NULL,
+  "phone" VARCHAR(20) not NULL,
   "user_status" user_status NOT NULL DEFAULT 'inverify',
   "gender" gender NOT NULL DEFAULT 'male',
   "role" user_role NOT NULL DEFAULT 'user',

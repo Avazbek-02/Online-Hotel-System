@@ -55,7 +55,6 @@ func NewRouter(engine *gin.Engine, l *logger.Logger, config *config.Config, useC
 		user.GET("/list", handlerV1.GetUsers)
 		user.GET("/:id", handlerV1.GetUser)
 		user.PUT("/", handlerV1.UpdateUser)
-		user.POST("/avatar", handlerV1.SetUserAvatar)
 		user.DELETE("/:id", handlerV1.DeleteUser)
 	}
 

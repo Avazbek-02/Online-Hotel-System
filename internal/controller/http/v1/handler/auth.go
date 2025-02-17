@@ -36,7 +36,6 @@ func (h *Handler) Login(ctx *gin.Context) {
 	}
 
 	user, err := h.UseCase.UserRepo.GetSingle(ctx, entity.UserSingleRequest{
-		UserName: body.Email,
 		Email:    body.Email,
 	})
 	if h.HandleDbError(ctx, err, "Error getting user") {
@@ -51,7 +50,7 @@ func (h *Handler) Login(ctx *gin.Context) {
 		return
 	}
 	
-	if !hash.CheckPasswordHash(body.Password, user.Password) {
+	if !hash.CheckPasswordHash(body.Password, user.Password_hash) {
 		h.ReturnError(ctx, config.ErrorInvalidPass, "Incorrect password", http.StatusBadRequest)
 		return
 	}
@@ -145,7 +144,6 @@ func (h *Handler) Register(ctx *gin.Context) {
 	}
 
 	user, err := h.UseCase.UserRepo.GetSingle(ctx, entity.UserSingleRequest{
-		UserName: body.Username,
 		Email:    body.Email,
 	})
 	if err == nil {
@@ -163,12 +161,11 @@ func (h *Handler) Register(ctx *gin.Context) {
 		FullName: body.FullName,
 		UserType: "user",
 		UserRole: "user",
-		Username: body.Username,
+		UserName: body.Username,
 		Email:    body.Email,
-		Status:   "inverify",
-		Password: body.Password,
+		UserStatus:   "inverify",
+		Password_hash: body.Password,
 		Gender:   body.Gender,
-		AvatarId: body.Email,
 	})
 	if h.HandleDbError(ctx, err, "Error creating user") {
 		return
@@ -241,7 +238,7 @@ func (h *Handler) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	user.Status = "active"
+	user.UserStatus = "active"
 
 	_, err = h.UseCase.UserRepo.Update(ctx, user)
 	if h.HandleDbError(ctx, err, "update user") {

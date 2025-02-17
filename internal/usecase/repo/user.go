@@ -30,8 +30,8 @@ func NewUserRepo(pg *postgres.Postgres, config *config.Config, logger *logger.Lo
 func (r *UserRepo) Create(ctx context.Context, req entity.User) (entity.User, error) {
 	req.ID = uuid.NewString()
 	query, args, err := r.pg.Builder.Insert("users").
-		Columns(`id, name, email, password, phone, user_status, gender, role`).
-		Values(req.ID, req.Name, req.Email, req.Password_hash, req.Phone, req.UserStatus, req.Gender, req.UserRole).ToSql()
+		Columns(`id, fullname, username, email, password, phone, user_status, gender, role`).
+		Values(req.ID, req.FullName, req.UserName, req.Email, req.Password_hash, req.Phone, req.UserStatus, req.Gender, req.UserRole).ToSql()
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -49,7 +49,7 @@ func (r *UserRepo) GetSingle(ctx context.Context, req entity.UserSingleRequest) 
 	var createdAt, updatedAt time.Time
 
 	queryBuilder := r.pg.Builder.
-		Select(`id, name, email, phone, user_status, gender, role, created_at, updated_at`).
+		Select(`id, fullname, username, email, phone, user_status, gender, role, created_at, updated_at`).
 		From("users")
 
 	switch {
@@ -69,7 +69,7 @@ func (r *UserRepo) GetSingle(ctx context.Context, req entity.UserSingleRequest) 
 	}
 
 	err = r.pg.Pool.QueryRow(ctx, query, args...).
-		Scan(&response.ID, &response.Name, &response.Email, &response.Phone, &response.UserStatus, &response.Gender, &response.UserRole, &createdAt, &updatedAt)
+		Scan(&response.ID, &response.FullName, &response.UserName, &response.Email, &response.Phone, &response.UserStatus, &response.Gender, &response.UserRole, &createdAt, &updatedAt)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -86,7 +86,7 @@ func (r *UserRepo) GetList(ctx context.Context, req entity.GetListFilter) (entit
 	)
 
 	queryBuilder := r.pg.Builder.
-		Select("id, name, email, phone, user_status, gender, role, created_at, updated_at").
+		Select("id, fullname, username, email, phone, user_status, gender, role, created_at, updated_at").
 		From("users")
 
 	queryBuilder, where := PrepareGetListQuery(queryBuilder, req)
@@ -104,7 +104,7 @@ func (r *UserRepo) GetList(ctx context.Context, req entity.GetListFilter) (entit
 
 	for rows.Next() {
 		var item entity.User
-		err = rows.Scan(&item.ID, &item.Name, &item.Email, &item.Phone, &item.UserStatus, &item.Gender, &item.UserRole, &createdAt, &updatedAt)
+		err = rows.Scan(&item.ID, &item.FullName, &item.UserName, &item.Email, &item.Phone, &item.UserStatus, &item.Gender, &item.UserRole, &createdAt, &updatedAt)
 		if err != nil {
 			return response, err
 		}
@@ -132,22 +132,25 @@ func (r *UserRepo) GetList(ctx context.Context, req entity.GetListFilter) (entit
 func (r *UserRepo) Update(ctx context.Context, req entity.User) (entity.User, error) {
 	updateFields := make(map[string]interface{})
 
-	if req.Name != "" {
-		updateFields["name"] = req.Name
+	if req.FullName != "" && req.FullName != "string"{
+		updateFields["fullname"] = req.FullName
 	}
-	if req.Email != "" {
+	if req.UserName != "" && req.UserName != "string"{
+		updateFields["username"] = req.UserName
+	}
+	if req.Email != "" && req.Email != "string"{
 		updateFields["email"] = req.Email
 	}
-	if req.Phone != "" {
+	if req.Phone != "" && req.Phone != "string"{
 		updateFields["phone"] = req.Phone
 	}
-	if req.UserStatus != "" {
+	if req.UserStatus != "" && req.UserStatus != "string"{
 		updateFields["user_status"] = req.UserStatus
 	}
-	if req.Gender != "" {
+	if req.Gender != "" && req.Gender != "string"{
 		updateFields["gender"] = req.Gender
 	}
-	if req.UserRole != "" {
+	if req.UserRole != "" && req.UserRole != "string"{
 		updateFields["role"] = req.UserRole
 	}
 

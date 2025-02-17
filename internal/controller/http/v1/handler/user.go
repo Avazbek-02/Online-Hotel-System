@@ -33,7 +33,7 @@ func (h *Handler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	body.Password, err = hash.HashPassword(body.Password)
+	body.Password_hash, err = hash.HashPassword(body.Password_hash)
 	if err != nil {
 		h.ReturnError(ctx, config.ErrorBadRequest, "Error hashing password", 400)
 		return
@@ -69,7 +69,7 @@ func (h *Handler) GetUser(ctx *gin.Context) {
 	if h.HandleDbError(ctx, err, "Error getting user") {
 		return
 	}
-	user.Password = " "
+	user.Password_hash = " "
 	ctx.JSON(200, user)
 }
 
@@ -154,8 +154,8 @@ func (h *Handler) UpdateUser(ctx *gin.Context) {
 		body.ID = ctx.GetHeader("sub")
 	}
 
-	if body.Password != "" {
-		body.Password, err = hash.HashPassword(body.Password)
+	if body.Password_hash != "" {
+		body.Password_hash, err = hash.HashPassword(body.Password_hash)
 		if err != nil {
 			h.ReturnError(ctx, config.ErrorBadRequest, "Error hashing password", 400)
 			return
@@ -237,52 +237,52 @@ func (h *Handler) UploadImage(c *gin.Context) {
 	c.JSON(200, gin.H{"worked": minioURL})
 }
 
-// SetUserAvatar godoc
-// @Router /user/avatar [post]
-// @Summary Set user avatar
-// @Description Upload an avatar to MinIO and update user's avatar ID in the database
-// @Security BearerAuth
-// @Tags user
-// @Accept multipart/form-data
-// @Produce json
-// @Param file formData file true "Avatar image file"
-// @Success 200 {object} entity.User
-// @Failure 400 {object} entity.ErrorResponse
-// @Failure 500 {object} entity.ErrorResponse
-func (h *Handler) SetUserAvatar(ctx *gin.Context) {
-	userID := ctx.GetHeader("sub")
-	if userID == "" {
-		h.ReturnError(ctx, config.ErrorUnauthorized, "User ID is required in header", 401)
-		return
-	}
+// // SetUserAvatar godoc
+// // @Router /user/avatar [post]
+// // @Summary Set user avatar
+// // @Description Upload an avatar to MinIO and update user's avatar ID in the database
+// // @Security BearerAuth
+// // @Tags user
+// // @Accept multipart/form-data
+// // @Produce json
+// // @Param file formData file true "Avatar image file"
+// // @Success 200 {object} entity.User
+// // @Failure 400 {object} entity.ErrorResponse
+// // @Failure 500 {object} entity.ErrorResponse
+// func (h *Handler) SetUserAvatar(ctx *gin.Context) {
+// 	userID := ctx.GetHeader("sub")
+// 	if userID == "" {
+// 		h.ReturnError(ctx, config.ErrorUnauthorized, "User ID is required in header", 401)
+// 		return
+// 	}
 
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, err)
-		return
-	}
-	filename := uuid.New().String() + "-" + file.Filename
+// 	file, err := ctx.FormFile("file")
+// 	if err != nil {
+// 		ctx.JSON(http.StatusBadRequest, err)
+// 		return
+// 	}
+// 	filename := uuid.New().String() + "-" + file.Filename
 
-	tempPath := "/tmp/" + file.Filename
-	if err := ctx.SaveUploadedFile(file, tempPath); err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
-		return
-	}
+// 	tempPath := "/tmp/" + file.Filename
+// 	if err := ctx.SaveUploadedFile(file, tempPath); err != nil {
+// 		ctx.JSON(http.StatusInternalServerError, err)
+// 		return
+// 	}
 
-	minioURL, err := h.MinIO.Upload(filename, tempPath)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	updateReq := entity.User{
-		ID:       userID,
-		AvatarId: minioURL,
-	}
+// 	minioURL, err := h.MinIO.Upload(filename, tempPath)
+// 	if err != nil {
+// 		ctx.JSON(http.StatusInternalServerError, err)
+// 		return
+// 	}
+// 	updateReq := entity.User{
+// 		ID:       userID,
+// 		AvatarId: minioURL,
+// 	}
 
-	updatedUser, err := h.UseCase.UserRepo.Update(ctx, updateReq)
-	if h.HandleDbError(ctx, err, "Error updating user avatar") {
-		return
-	}
+// 	updatedUser, err := h.UseCase.UserRepo.Update(ctx, updateReq)
+// 	if h.HandleDbError(ctx, err, "Error updating user avatar") {
+// 		return
+// 	}
 
-	ctx.JSON(200, updatedUser)
-}
+// 	ctx.JSON(200, updatedUser)
+// }
